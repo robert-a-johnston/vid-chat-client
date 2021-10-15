@@ -7,7 +7,7 @@ const SocketContext = createContext()
 const socket = io('http://localhost:5000')
 
 const ContextProvider = ({ children }) => {
-  // set state of stream
+  // set states
   const [stream, setStream] = useState(null)
   const [me, setMe] = useState('')
   const [call, setCall] = useState({})
@@ -31,8 +31,8 @@ const ContextProvider = ({ children }) => {
       })
     // listen for the 'me' action from server
     socket.on('me', (id) => setMe(id))
-    // listen for 'calluser' from
-    socket.on('calluser', ({ from, name: callerName, signal }) => {
+    // listen for 'callUser' from
+    socket.on('callUser', ({ from, name: callerName, signal }) => {
       setCall({ isReceivedCall: true, from, name: callerName, signal })
     })
   // empty array lets useEffect to happen once
@@ -41,16 +41,16 @@ const ContextProvider = ({ children }) => {
   const answerCall = () => {
     setCallAccepted(true)
 
-    const peer = new Peer({initiator: false, trickle: false, stream})
+    const peer = new Peer({ initiator: false, trickle: false, stream })
 
     peer.on('signal', (data) => {
-      socket.emit('answercall', { signal: data, to: call.from})
+      socket.emit('answerCall', { signal: data, to: call.from })
     })
 
     peer.on('stream', (currentStream) => {
       userVideo.current.srcObject = currentStream
     })
-    // call comes from socket 'calluser'
+    // call comes from socket 'callUser'
     peer.signal(call.signal)
 
     connectionRef.current = peer
@@ -61,14 +61,14 @@ const ContextProvider = ({ children }) => {
     const peer = new Peer({initiator: true, trickle: false, stream})
 
     peer.on('signal', (data) => {
-      socket.emit('calluser', { userToCall: id, signalData: data, from: me, name})
+      socket.emit('callUser', { userToCall: id, signalData: data, from: me, name})
     })
 
     peer.on('stream', (currentStream) => {
       userVideo.current.srcObject = currentStream
     })
 
-    socket.on('callaccepted', (signal) => {
+    socket.on('callAccepted', (signal) => {
       setCallAccepted(true)
       peer.signal(signal)
     })
